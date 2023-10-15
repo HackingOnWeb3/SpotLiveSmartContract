@@ -2,9 +2,15 @@
 pragma solidity ^0.8.13;
 
 import "@openzeppelin/contracts/token/ERC721/extensions/ERC721URIStorage.sol";
+import "./CalculateLib.sol";
+import {console2} from "forge-std/Test.sol";
 
 contract SpotLive is ERC721URIStorage{
     
+
+    using DistanceCalculator for *;
+
+
     //current pending token id
     uint256 public currentTokenID;
 
@@ -55,6 +61,15 @@ contract SpotLive is ERC721URIStorage{
     // 
     mapping (address => CheckInInfo[]) public memberCheckList;
 
+
+    struct LiveInfo {
+        string name;
+        string symbol;
+        uint256 startTime;
+        uint256 endTime;
+        string description;
+    }
+    mapping (address => LiveInfo) public liveEvenInfoMap;
     //string memory name, string memory symbol
     constructor() ERC721("PASSToken", "PASS") {
         currentTokenID = 0;
@@ -85,13 +100,10 @@ contract SpotLive is ERC721URIStorage{
             scopeAddress = msg.sender;
             scopeMap[scopeAddress] = CheckInInfo(latitude, longitude, time, isOrigin,scopeAddress);
             scopeMembersMap[scopeAddress].push(msg.sender);
-
-            //originList
+            
+            // //originList
             originList.push(scopeAddress);
 
-            memberCheckList[msg.sender].push(
-                CheckInInfo(latitude, longitude, time, isOrigin,scopeAddress)
-            );
         }else {
 
             //check if 500 internal
@@ -187,8 +199,50 @@ contract SpotLive is ERC721URIStorage{
         tokenPoints[tokenId] = maxPoints;
     }
 
+    function getDistance(
+        int256 lat1,
+        int256 lon1,
+        int256 lat2,
+        int256 lon2
+    ) public pure returns (int256) {
+        return DistanceCalculator.calculateDistance(lat1, lon1, lat2, lon2);
+    }
+
+    //return all array for a specific user
+    function getCheckInList(address user) public view returns (CheckInInfo[] memory) {
+        require(memberCheckList[user].length > 0, "You have not checked in yet");
+        return memberCheckList[user];
+    }
+
+    //add live info
+    function addLiveInfo(
+        string memory userName, 
+        address scope , 
+        string memory scopename, 
+        uint256 startTime, 
+        uint256 endTime,
+        string memory description
+    ) public returns(bool){
+        
+        //check if the msg.sender is the owner of the scope
+        // if (scopeMap[scope].belongToScope != msg.sender) {
+        //     revert("You are not the owner of the scope");
+        // }
+
+        //check if the scope is origin
+        if (!scopeMap[scope].origin) {
+            revert("The scope is not origin");
+        }
+
+        //check if the scope is already added
+        if (liveEvenInfoMap[scope].startTime != 0) {
+            revert("The scope is already added");
+        }
+
+        //add to liveEvenInfoMap
+        liveEvenInfoMap[scope] = LiveInfo(userName, scopename, startTime, endTime, description);
+
+        return true;
+        
+    }
 }
-
-
-
-
