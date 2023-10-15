@@ -70,6 +70,14 @@ contract SpotLive is ERC721URIStorage{
         string description;
     }
     mapping (address => LiveInfo) public liveEvenInfoMap;
+
+
+    //tokens list of a users
+    mapping (address => uint256[]) public userTokenList;
+
+
+    //tokenid mapping to scope address
+    mapping (uint256 => address) public tokenIdToScope;
     //string memory name, string memory symbol
     constructor() ERC721("PASSToken", "PASS") {
         currentTokenID = 0;
@@ -122,7 +130,6 @@ contract SpotLive is ERC721URIStorage{
         );
     }
 
-
     function checkDistance(uint256 lat ,uint256 long) public view returns (address) {
         for (uint i = 0; i < originList.length; i++) {
                 uint latOrigin = scopeMap[originList[i]].latitude;
@@ -173,11 +180,15 @@ contract SpotLive is ERC721URIStorage{
 
             //add to scopeTokenList
             scopeTokenList[scopeAddress].push(currentTokenID);
+
+            //add to user token list
+            userTokenList[msg.sender].push(currentTokenID);
+
+            tokenIdToScope[currentTokenID] = scopeAddress;
             //increment token id
             currentTokenID++;
         }
     }
-
 
     //buy point with 10% of the price of the PASS
     function buyPoint(address scope,uint256 tokenId )  public payable {
@@ -194,7 +205,7 @@ contract SpotLive is ERC721URIStorage{
             revert("The msg.value is not enough");
         }
         //transfer the token to the contract
-    
+
         //charge points to max 
         tokenPoints[tokenId] = maxPoints;
     }
@@ -248,6 +259,16 @@ contract SpotLive is ERC721URIStorage{
 
     //get origin list
     function getOriginList() public view returns (address[] memory, uint256) {
-        return originList, originList.length;
+        return (originList, originList.length);
+    }
+
+    //get checkInList
+    function getCheckInList() public view returns (CheckInInfo[] memory, uint256) {
+        return (checkInList, checkInList.length);
+    }
+
+    //get token list of a scope
+    function getUserTokenList(address user) public view returns (uint256[] memory, uint256) {
+        return (userTokenList[user], userTokenList[user].length);
     }
 }
