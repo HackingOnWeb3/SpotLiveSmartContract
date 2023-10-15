@@ -245,4 +245,9 @@ contract SpotLive is ERC721URIStorage{
         return true;
         
     }
+
+    //get origin list
+    function getOriginList() public view returns (address[] memory, uint256) {
+        return originList, originList.length;
+    }
 }
